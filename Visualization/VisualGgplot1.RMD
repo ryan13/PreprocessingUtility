@@ -1,0 +1,378 @@
+---
+title: "DataVisualizeggplot"
+author: "Tri_datacamp"
+date: "November 14, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+change Folder
+
+
+```{r cars}
+setwd("C:/Dataset/Datacamp")
+```
+
+```{r pressure, echo=FALSE}
+load("C:/Dataset/Datacamp/iris.RData")
+head(iris)
+```
+Create tidy data
+head(iris.tidy)
+  Species  Part Measure Value
+1  setosa Sepal  Length   5.1
+2  setosa Sepal  Length   4.9
+3  setosa Sepal  Length   4.7
+```{r}
+iris.tidy <- iris %>%
+  gather(key, Value, -Species) %>%
+  separate(key, c("Part", "Measure"), "\\.") 
+head(iris.tidy)
+```
+Create ggplot from : iris
+ Species Sepal.Length Sepal.Width Petal.Length Petal.Width
+1       setosa          5.1         3.5          1.4         0.2
+2       setosa          4.9         3.0          1.4         0.2
+3       setosa          4.7         3.2          1.3         0.2
+
+To: iris.wide
+head(iris.wide)
+  Species  Part Length Width
+1  setosa Petal    1.4   0.2
+2  setosa Petal    1.4   0.2
+3  setosa Petal    1.3   0.2
+```{r}
+
+iris$Flower <- 1:nrow(iris)
+# Add column with unique ids (don't need to change)
+iris.wide <- iris %>%
+  gather(key, value, -Species, -Flower) %>%
+  separate(key, c("Part","Measure"), "\\.") %>%
+  spread(Measure, value)
+
+
+ggplot(iris.wide, aes(x = Length, y = Width, col = Part)) +
+  geom_jitter() +
+  facet_grid(. ~ Species)
+```
+All about aesthetics
+The color aesthetic typically changes the outside outline of an object and the fill aesthetic is typically the inside shading. However, as you saw in the last exercise, geom_point() is an exception. Here you use color, instead of fill for the inside of the point. But it's a bit subtler than that.
+
+Which shape to use? The default geom_point() uses shape = 19 (a solid circle with an outline the same colour as the inside). Good alternatives are shape = 1 (hollow) and shape = 16 (solid, no outline). These all use the col aesthetic (don't forget to set alpha for solid points).
+
+A really nice alternative is shape = 21 which allows you to use both fill for the inside and col for the outline! This is a great little trick for when you want to map two aesthetics to a dot.
+
+```{r}
+# Given from the previous exercise
+ggplot(mtcars, aes(x = wt, y = mpg, col = cyl)) +
+  geom_point(shape = 1, size = 4)
+
+# Map cyl to fill
+ggplot(mtcars, aes(x = wt, y = mpg, fill = cyl)) +
+  geom_point( )
+
+
+# Change shape, size and alpha of the points in the above plot
+ggplot(mtcars, aes(x = wt, y = mpg, fill = cyl)) +
+  geom_point(shape = 16, alpha =0.6, size =6 )
+```
+asthestics 3
+
+```{r}
+ggplot(mtcars, aes(x = wt, y = mpg, size = cyl)) +
+  geom_point()
+
+# Map cyl to alpha
+ggplot(mtcars, aes(x = wt, y = mpg, alpha = cyl)) +
+  geom_point()
+
+# Map cyl to shape 
+ggplot(mtcars, aes(x = wt, y = mpg, shape = cyl)) +
+  geom_point()
+
+# Map cyl to labels
+ggplot(mtcars, aes(x = wt, y = mpg, label = cyl)) +
+  geom_text()
+```
+Going all out
+here is a list of all the features of the observations in mtcars:
+
+    mpg -- Miles/(US) gallon
+    cyl -- Number of cylinders
+    disp -- Displacement (cu.in.)
+    hp -- Gross horsepower
+    drat -- Rear axle ratio
+    wt -- Weight (lb/1000)
+    qsec -- 1/4 mile time
+    vs -- V/S engine.
+    am -- Transmission (0 = automatic, 1 = manual)
+    gear -- Number of forward gears
+    carb -- Number of carburetors
+```{r}
+# Map mpg onto x, qsec onto y and factor(cyl) onto col
+ggplot(mtcars,aes(x=mpg,y=qsec, col=factor(cyl))) + geom_point()
+
+
+# Add mapping: factor(am) onto shape
+
+ggplot(mtcars,aes(x=mpg,y=qsec, col=factor(cyl),shape=factor(am))) + geom_point()
+
+# Add mapping: (hp/wt) onto size
+
+ggplot(mtcars,aes(x=mpg,y=qsec, col=factor(cyl),shape=factor(am),size=(hp/wt))) + geom_point()
+```
+Position
+
+```{r}
+cyl.am <- ggplot(mtcars, aes(x = factor(cyl), fill = factor(am)))
+# Fill - show proportion
+cyl.am + 
+  geom_bar(position = "fill")  
+
+# Dodging - principles of similarity and proximity
+cyl.am +
+  geom_bar(position = "dodge") 
+
+# Clean up the axes with scale_ functions
+val = c("#E41A1C", "#377EB8")
+lab = c("Manual", "Automatic")
+cyl.am +
+  geom_bar(position = "dodge") +
+  scale_x_discrete("Cylinders") + 
+  scale_y_continuous("Number") +
+  scale_fill_manual("Transmission", 
+                    values = val,
+                    labels = lab) 
+
+```
+Overplotting 1 - Point shape and transparency
+ A major consideration in any scatter plot is dealing with overplotting when you have:
+    Large datasets,
+    Imprecise data and so points are not clearly separated on your plot (you saw this in the video with the iris dataset),
+    Interval data (i.e. data appears at fixed values), or
+    Aligned data values on a single axis.
+    
+always use when you have solid shapes it to use alpha blending (i.e. adding transparency). An alternative is to use hollow shapes.
+```{r}
+# Basic scatter plot: wt on x-axis and mpg on y-axis; map cyl to col
+ggplot(mtcars,aes(x=wt,y=mpg, color=cyl,size=4)) + geom_point(size=4)
+
+
+# Hollow circles - an improvement
+
+ggplot(mtcars,aes(x=wt,y=mpg, color=cyl,size=4)) + geom_point(size=4,shape=1)
+
+# Add transparency - very nice
+ggplot(mtcars,aes(x=wt,y=mpg, color=cyl,size=4)) + geom_point(size=4,alpha=0.6)
+```
+```
+Overplotting 2 - alpha with large datasets (diamonds):
+
+
+    Large datasets.
+    Aligned data values on a single axis
+
+```{r}
+# Scatter plot: carat (x), price (y), clarity (col)
+
+ggplot(diamonds,aes(x=carat, y=price, col=clarity)) + geom_point()
+
+# Adjust for overplotting
+
+ggplot(diamonds,aes(x=carat, y=price, col=clarity)) + geom_point(alpha=0.5)
+
+# Scatter plot: clarity (x), carat (y), price (col)
+
+ggplot(diamonds,aes(x=clarity, y=carat, col=price)) + geom_point(alpha=0.5)
+
+# Dot plot with jittering
+
+ggplot(diamonds,aes(x=clarity, y=carat, col=price)) + geom_point(alpha=0.5,position="jitter")
+
+```
+Scatter plots and jittering 
+a few examples using geom_point() where the result was not a scatter plot. For example, in the plot shown in the viewer a continuous variable, wt, is mapped to the y aesthetic, and a categorical variable, cyl, is mapped to the x aesthetic. This also leads to over-plotting, since the points are arranged on a single x position. You previously dealt with overplotting by setting the position = jitter inside geom_point()
+```{r}
+gplot(mtcars,aes(x=cyl,y=wt)) + geom_jitter()
+
+# Define the position object using position_jitter(): posn.j
+
+  posn.j <- position_jitter(width=0.1)
+# Use posn.j in geom_point()
+
+ggplot(mtcars,aes(x=cyl,y=wt)) + geom_point(position=posn.j)
+```
+Notice that jitter can be 1) an argument in geom_point(position = 'jitter'), 2) a geom itself, geom_jitter(), or 3) a position function, position_jitter(0.1)
+
+Histogram
+
+```{r}
+
+```
+The x axis/aesthetic: The documentation for geom_histogram() states the argument stat = "bin" as a default. Recall that histograms cut up a continuous variable into discrete bins - thats what the stat "bin" is doing. You always get 30 evenly-sized bins by default, which is specified with the default argument binwidth = range/30. This is a pretty good starting point if you don't know anything about the variable being ploted and want to start exploring.
+
+The y axis/aesthetic: geom_histogram() only requires one aesthetic: x. But there is clearly a y axis on your plot, so where does it come from? Actually, there is a variable mapped to the y aesthetic, it's called ..count... When geom_histogram() executed the binning statistic (see above), it not only cut up the data into discrete bins, but it also counted how many values are in each bin. So there is an internal data frame where this information is stored. The .. calls the variable count from this internal data frame. This is what appears on the y aesthetic. But it gets better! The density has also been calculated. This is the proportional frequency of this bin in relation to the whole data set. You use ..density.. to access this information.
+```{r}
+# 1 - Make a univariate histogram
+ggplot(mtcars, aes(x = mpg)) +
+ geom_histogram()
+
+# 2 - Plot 1, plus set binwidth to 1 in the geom layer
+ggplot(mtcars, aes(x = mpg)) +
+ geom_histogram(binwidth = 1)
+
+
+# 3 - Plot 2, plus MAP ..density.. to the y aesthetic (i.e. in a second aes() function)
+ggplot(mtcars, aes(x = mpg)) +
+ geom_histogram(binwidth = 1, aes(y=..density..))
+
+```
+Position
+
+ The geom_bar() and geom_histogram() geoms also have a position argument, which you can use to specify how to draw the bars of the plot.
+
+Three position arguments will be introduced here:
+
+    stack: place the bars on top of each other. Counts are used. This is the default position.
+    fill: place the bars on top of each other, but this time use proportions.
+    dodge: place the bars next to each other. Counts are used.
+
+```{r}
+ggplot(mtcars,aes(x=cyl,fill=am)) + geom_bar()
+
+# Change the position argument to stack
+
+
+ggplot(mtcars,aes(x=cyl,fill=am)) + geom_bar(position="stack")
+# Change the position argument to fill
+
+ggplot(mtcars,aes(x=cyl,fill=am)) + geom_bar(position="fill")
+
+# Change the position argument to dodge
+
+ggplot(mtcars,aes(x=cyl,fill=am)) + geom_bar(position="dodge")
+```
+Overlapping bar plots
+
+```{r}
+# 1 - The last plot form the previous exercise
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar(position = "dodge")
+
+# 2 - Define posn_d with position_dodge()
+posn_d <- position_dodge(width = 0.2)
+
+# 3 - Change the position argument to posn_d
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar(position = posn_d)
+
+# 4 - Use posn_d as position and adjust alpha to 0.6
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar(position = posn_d, alpha = 0.6)
+
+```
+Overlapping histograms:
+Frequency polygon plots, like kernel density plots, allow several distributions to be displayed in the same panel.
+```{r}
+# A basic histogram, add coloring defined by cyl
+ggplot(mtcars, aes(mpg,fill=cyl)) +
+  geom_histogram(binwidth = 1)
+
+# Change position to identity
+ggplot(mtcars, aes(mpg,fill=cyl)) +
+  geom_histogram(binwidth = 1,position ="identity")
+
+# Change geom to freqpoly (position is identity by default)
+ggplot(mtcars, aes(mpg,col=cyl)) +
+  geom_histogram(binwidth = 1,position ="identity") +
+   geom_freqpoly(binwidth=1)
+
+```
+Bar plots with color ramp, part 1
+```{r}
+# Example of how to use a brewed color palette
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar() +
+  scale_fill_brewer(palette = "Set1")
+  
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar() +  scale_fill_brewer(palette = "Set1") 
+```
+Bar plots with color ramp, part 2
+```{r}
+the default RColorBrewer palette that scale_fill_brewer() calls is "Blues". There are only 9 colours in the palette, and since you have 11 categories, your plot looked strange. So you'll manually create a color palette that can generate all the colours you need. To do this you'll use a function called colorRampPalette().
+
+```{r}
+# Final plot of last exercise
+ggplot(Vocab, aes(x = education, fill = vocabulary)) +
+  geom_bar(position = "fill") +
+  scale_fill_brewer()
+  
+# Definition of a set of blue colors
+blues <- brewer.pal(9, "Blues")
+
+# Make a color range using colorRampPalette() and the set of blues
+
+blue_range <- colorRampPalette(blues)
+# Use blue_range to adjust the color of the bars, use scale_fill_manual()
+ggplot(Vocab, aes(x = education, fill = vocabulary)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values=blue_range(11)) 
+ggplot(Vocab, aes(x = education, fill = vocabulary)) +
+  geom_bar(position="fill") +
+  scale_fill_manual(values=blue_range(11))
+  
+```
+Overlapping histograms (2)
+```{r}
+# Basic histogram plot command
+ggplot(mtcars, aes(mpg)) + 
+  geom_histogram(binwidth = 1)
+
+# Expand the histogram to fill using am
+ggplot(mtcars, aes(mpg,fill=am)) + 
+  geom_histogram(binwidth = 1)
+
+
+# Change the position argument to "dodge"
+ggplot(mtcars, aes(mpg,fill=am)) +   geom_histogram(binwidth = 1,position="dodge")
+
+# Change the position argument to "fill"
+
+ggplot(mtcars, aes(mpg,fill=am)) +   geom_histogram(binwidth = 1, ,position="fill")
+
+
+# Change the position argument to "identity" and set alpha to 0.4
+
+ggplot(mtcars, aes(mpg,fill=am)) +   geom_histogram(binwidth = 1, alpha=0.4,position="identity")
+
+# Change fill to cyl
+ggplot(mtcars, aes(mpg,fill=cyl)) +   geom_histogram(position="identity",binwidth = 1, alpha=0.4)
+```
+Line plots
+To begin with, you can look at how the median unemployment time and the unemployment rate (the number of unemployed people as a proportion of the population) change over time.
+```{r}
+
+# Print out head of economics
+head(economics)
+
+# Plot unemploy as a function of date using a line plot
+ggplot(economics, aes(x = date, y = unemploy)) +
+  geom_line()
+
+# Adjust plot to represent the fraction of total population that is unemployed
+ggplot(economics, aes(x = date, y = unemploy/pop)) +
+  geom_line()
+```
+Periods of recession
+
+```{r}
+# Expand the following command with geom_rect() to draw the recess periods
+ggplot(economics, aes(x = date, y = unemploy/pop)) +
+  geom_line() + 
+  geom_rect(data=recess, inherit.aes=FALSE, aes(xmin=begin,xmax=end, ymin=-Inf,ymax=+Inf), 
+  fill="red",alpha=0.2)
+
+  
